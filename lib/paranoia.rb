@@ -10,17 +10,17 @@ module Paranoia
     def paranoid? ; true ; end
 
     def with_deleted
-      if ActiveRecord::VERSION::STRING >= "4.1"
-        unscope where: paranoia_column
-      else
-        all.tap { |x| x.default_scoped = false }
-      end
+      all
     end
 
     def only_deleted
-      with_deleted.where.not(paranoia_column => nil)
+      where.not(paranoia_column => nil)
     end
     alias :deleted :only_deleted
+
+    def non_deleted
+      where(paranoia_column => nil)
+    end
 
     def restore(id, opts = {})
       if id.is_a?(Array)
@@ -129,7 +129,6 @@ class ActiveRecord::Base
     class_attribute :paranoia_column
 
     self.paranoia_column = options[:column] || :deleted_at
-    default_scope { where(paranoia_column => nil) }
 
     before_restore {
       self.class.notify_observers(:before_restore, self) if self.class.respond_to?(:notify_observers)
